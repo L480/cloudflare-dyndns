@@ -8,9 +8,9 @@ Middleware for updating Cloudflare DNS records through an AVM FRITZ!Box.
 
 ![Create a Cloudflare custom token](./images/create-cloudflare-token.png "Create a Cloudflare custom token")
 
-### Option 1: Host cloudflare-dyndns yourself
+### Option 1: Self-host cloudflare-dyndns with Docker
 
-Pull the cloudflare-dyndns Docker container:
+Start cloudflare-dyndns:
 
 ```bash
 docker run -p 80:80 ghcr.io/l480/cloudflare-dyndns:latest
