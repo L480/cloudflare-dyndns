@@ -7,7 +7,7 @@ import flask
 app = flask.Flask(__name__)
 
 
-@app.route('/cloudflare', methods=['GET'])
+@app.route('/', methods=['GET'])
 def main():
     token = flask.request.args.get('token')
     zone = flask.request.args.get('zone')
