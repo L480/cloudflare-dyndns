@@ -20,4 +20,4 @@ jobs:
           file: ./Dockerfile
           context: ./
           push: true
-          tags: ghcr.io/L480/cloudflare-dyndns:latest
+          tags: ghcr.io/l480/cloudflare-dyndns:latest
