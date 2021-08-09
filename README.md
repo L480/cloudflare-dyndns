@@ -6,7 +6,7 @@ Middleware for updating [Cloudflare](https://www.cloudflare.com/) DNS records th
 
 ### Create a Cloudflare API token
 
-Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with **read permissions** for the scope `Zone.Zone` and **edit permissions** for the scope `Zone.DNS` permissions.
+Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with **read permissions** for the scope `Zone.Zone` and **edit permissions** for the scope `Zone.DNS`.
 
 ![Create a Cloudflare custom token](./images/create-cloudflare-token.png "Create a Cloudflare custom token")
 
