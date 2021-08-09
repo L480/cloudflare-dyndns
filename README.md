@@ -1,10 +1,12 @@
 # cloudflare-dyndns
 
-Middleware for updating Cloudflare DNS records through an AVM FRITZ!Box.
+Middleware for updating [Cloudflare](https://www.cloudflare.com/) DNS records through an [AVM FRITZ!Box](https://en.avm.de/products/fritzbox/).
 
 ## Getting started
 
 ### Create a Cloudflare API token
+
+Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with **read permissions** for the scope `Zone.Zone` and **edit permissions** for the scope `Zone.DNS` permissions.
 
 ![Create a Cloudflare custom token](./images/create-cloudflare-token.png "Create a Cloudflare custom token")
 
