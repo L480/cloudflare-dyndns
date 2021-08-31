@@ -48,7 +48,7 @@ def main():
 
         if ipv6 is not None and aaaa_record[0]['content'] != ipv6:
             cf.zones.dns_records.put(zones[0]['id'], aaaa_record[0]['id'], data={
-                                     'name': a_record[0]['name'], 'type': 'AAAA', 'content': ipv6})
+                                     'name': aaaa_record[0]['name'], 'type': 'AAAA', 'content': ipv6})
     except CloudFlare.exceptions.CloudFlareAPIError as e:
         return flask.jsonify({'status': 'error', 'message': str(e)}), 500
 
