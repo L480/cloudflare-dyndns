@@ -20,4 +20,5 @@ jobs:
           file: ./Dockerfile
           context: ./
           push: true
-          tags: ghcr.io/kseb/cloudflare-dyndns:latest
+          platforms: linux/amd64,linux/arm/v7,linux/arm/v6,linux/arm/v8
+          tags: ghcr.io/l480/cloudflare-dyndns:latest
