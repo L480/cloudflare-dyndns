@@ -54,7 +54,9 @@ def main():
 
     return flask.jsonify({'status': 'success', 'message': 'Update successful.'}), 200
 
+@app.route('/healthz', methods=['GET'])
+def healthz():
+    return flask.jsonify({'status': 'success', 'message': 'OK'}), 200
 
-if __name__ == '__main__':
-    app.secret_key = os.urandom(24)
-    waitress.serve(app, host='0.0.0.0', port=80)
+app.secret_key = os.urandom(24)
+waitress.serve(app, host='0.0.0.0', port=80)

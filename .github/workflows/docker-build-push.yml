@@ -1,8 +1,8 @@
 name: Build and push Docker images to GitHub Packages
 on: push
 jobs:
-  cloudflare_dyndns:
-    name: Build and push cloudflare-dyndns
+  cloudflare_dyndns_docker-build-push:
+    name: Build and push cloudflare-dyndns docker image
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -18,6 +18,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lowercase repository owner
+        run: |
+          echo "REPO_OWNER=$(echo ${GITHUB_REPOSITORY_OWNER} | tr '[:upper:]' '[:lower:]')" >> ${GITHUB_ENV}
       - name: Build and push image to GitHub Packages
         id: docker_build
         uses: docker/build-push-action@v2
@@ -26,4 +29,4 @@ jobs:
           context: ./
           push: true
           platforms: linux/amd64,linux/arm/v6
-          tags: ghcr.io/l480/cloudflare-dyndns:latest
+          tags: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
