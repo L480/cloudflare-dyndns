@@ -12,11 +12,20 @@ Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) 
 
 ### Option 1: Self-host cloudflare-dyndns with Docker
 
+#### Docker
+
 Start cloudflare-dyndns:
 
 ```bash
 docker run -p 80:80 ghcr.io/l480/cloudflare-dyndns:latest
 ```
+
+#### helm-chart
+
+You can use the [helm chart](./helm-chart) to deploy cloudflare-dyndns to your
+kubernetes cluster. It is available at oci://ghcr.io/l480/charts/cloudflare-dyndns in version 0.1.0.
+
+An example values.yaml can be found [here](./helm-chart/values.yaml).
 
 ### Option 2: Use my cloud service
 
