@@ -26,4 +26,4 @@ jobs:
           context: ./
           push: true
           platforms: linux/amd64,linux/arm/v6
-          tags: ghcr.io/${{ github.repository_owner }}/cloudflare-dyndns:latest
+          tags: ghcr.io/l480/cloudflare-dyndns:latest
