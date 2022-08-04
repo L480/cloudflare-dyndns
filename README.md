@@ -10,7 +10,7 @@ Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) 
 
 ![Create a Cloudflare custom token](./images/create-cloudflare-token.png "Create a Cloudflare custom token")
 
-### Option 1: Self-host cloudflare-dyndns
+### :rocket: Option 1: Self-host cloudflare-dyndns
 
 #### Run on Docker
 
@@ -22,15 +22,19 @@ docker run -p 80:80 ghcr.io/l480/cloudflare-dyndns:latest
 
 #### Run on Kubernetes
 
-Use the [Helm Chart](./helm-chart) to deploy cloudflare-dyndns to Kubernetes or directly [pull it from the below OCI registry](https://helm.sh/docs/topics/registries/#enabling-oci-support):
+Use the [Helm Chart](./helm-chart) to deploy cloudflare-dyndns to Kubernetes or directly [pull it from the repositories OCI registry](https://helm.sh/docs/topics/registries/#enabling-oci-support):
 
 ```bash
 helm pull oci://ghcr.io/l480/charts/cloudflare-dyndns --version 0.1.0
 ```
 
-### Option 2: Use my free cloud service
+### :cloud: Option 2: Use my free cloud service
 
-If you don't want to host cloudflare-dyndns yourself, feel free to use my cloud service. Just enter `https://functions.nicoo.org/function/cloudflare-dyndns?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>` as Update URL in your FRITZ!Box.
+If you don't want to host cloudflare-dyndns yourself, feel free to use my cloud service. Just use this Update URL in your FRITZ!Box:
+
+```
+https://functions.nicoo.org/function/cloudflare-dyndns?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>
+```
 
 ### Configure your FRITZ!Box
 
