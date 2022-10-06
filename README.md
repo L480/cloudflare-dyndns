@@ -1,4 +1,7 @@
 # cloudflare-dyndns
+ 
+In this version it's possible to update all subdomains with a single web request
+
 
 Middleware for updating [Cloudflare](https://www.cloudflare.com/) DNS records through an [AVM FRITZ!Box](https://en.avm.de/products/fritzbox/).
 
