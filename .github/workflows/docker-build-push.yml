@@ -1,5 +1,7 @@
 name: Build and push Docker images to GitHub Packages
-on: push
+on:
+  push:
+  workflow_dispatch:
 jobs:
   cloudflare_dyndns_docker-build-push:
     name: Build and push cloudflare-dyndns docker image

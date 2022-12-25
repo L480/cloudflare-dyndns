@@ -1,5 +1,7 @@
 name: Build and push helm chart to GitHub Packages
-on: push
+on:
+  push:
+  workflow_dispatch:
 jobs:
   cloudflare_dyndns_helmchart-push:
     name: Push cloudflare-dyndns helm chart
