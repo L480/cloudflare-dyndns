@@ -28,5 +28,5 @@ jobs:
           file: ./Dockerfile
           context: ./
           push: true
-          platforms: linux/amd64,linux/arm/v6
+          platforms: linux/amd64,linux/arm/v6,linux/arm64/v8
           tags: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
