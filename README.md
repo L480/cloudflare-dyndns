@@ -33,14 +33,14 @@ helm pull oci://ghcr.io/l480/charts/cloudflare-dyndns --version 0.1.0
 If you don't want to host cloudflare-dyndns yourself, feel free to use my cloud service. Just use this Update URL in your FRITZ!Box:
 
 ```
-https://functions.nicoo.org/function/cloudflare-dyndns?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>
+https://dyndns.nicoo.org/?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>
 ```
 
 ### Configure your FRITZ!Box
 
 | FRITZ!Box Setting | Value                                                                                                   | Description                                                                                                                          |
 | ----------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Update URL        | `https://functions.nicoo.org/function/cloudflare-dyndns?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>` | Replace the URL parameter `record` and `zone` with your domain name. If required you can omit either the `ipv4` or `ipv6` URL parameter. |
+| Update URL        | `https://dyndns.nicoo.org/?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>&ipv6=<ip6addr>` | Replace the URL parameter `record` and `zone` with your domain name. If required you can omit either the `ipv4` or `ipv6` URL parameter. |
 | Domain Name       | www.example.com                                                                                         | The FQDN from the URL parameter `record` and `zone`.                                                                                 |
 | Username          | admin                                                                                                   | You can choose whatever value you want.                                                                                              |
 | Password          | ●●●●●●                                                                                                  | The API token you’ve created earlier.                                                                                                |
