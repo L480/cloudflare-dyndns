@@ -10,7 +10,7 @@ jobs:
         - ${{github.workspace}}:/workspace
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Lowercase repository owner
         run: |
           echo "REPO_OWNER=$(echo ${GITHUB_REPOSITORY_OWNER} | tr '[:upper:]' '[:lower:]')" >> ${GITHUB_ENV}
