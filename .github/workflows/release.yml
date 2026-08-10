@@ -108,7 +108,7 @@ jobs:
       - uses: sigstore/cosign-installer@v3
       - run: cosign sign-blob --yes "/tmp/chart/cloudflare-dyndns-${{ steps.version.outputs.version }}.tgz" --output-signature "/tmp/chart/cloudflare-dyndns-${{ steps.version.outputs.version }}.tgz.sig"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: helm-chart
           path: /tmp/chart/
