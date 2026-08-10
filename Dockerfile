@@ -4,9 +4,9 @@
 # Bump by re-resolving the tag and updating both the digest and this comment.
 ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8
 
-# hadolint ignore=DL3006
 # DL3006 is a false positive here: hadolint can't resolve the digest
 # through the ARG substitution above, but PYTHON_IMAGE is pinned by digest.
+# hadolint ignore=DL3006
 FROM ${PYTHON_IMAGE} AS builder
 
 ENV UV_LINK_MODE=copy \

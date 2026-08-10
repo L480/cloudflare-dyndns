@@ -113,13 +113,16 @@ jobs:
       - uses: azure/setup-helm@v4
       - uses: helm/chart-testing-action@v2
       - run: ct lint --charts helm-chart --validate-maintainers=false
-      - name: helm template (schema/dry-run check, no live cluster)
+      - name: helm template (render check)
+        # `kubectl apply --dry-run=client` was tried here but, even with
+        # --validate=false, kubectl still attempts live API discovery
+        # (RESTMapper) and fails with "connection refused" on a runner with
+        # no kubeconfig at all. ct lint already does schema-level chart
+        # validation (yamale); this step just confirms every values fixture
+        # renders without a Helm templating error.
         run: |
-          # --validate=false: kubectl's dry-run=client still tries to fetch
-          # the OpenAPI schema from a live API server unless told not to,
-          # which fails with "connection refused" on a runner with no cluster.
-          helm template test helm-chart -f helm-chart/ci/default-values.yaml | kubectl apply --dry-run=client --validate=false -f -
-          helm template test helm-chart -f helm-chart/ci/full-values.yaml | kubectl apply --dry-run=client --validate=false -f -
+          helm template test helm-chart -f helm-chart/ci/default-values.yaml > /dev/null
+          helm template test helm-chart -f helm-chart/ci/full-values.yaml > /dev/null
 
   trivy:
     name: Trivy filesystem scan
