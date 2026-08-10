@@ -113,9 +113,13 @@ jobs:
       - uses: azure/setup-helm@v4
       - uses: helm/chart-testing-action@v2
       - run: ct lint --charts helm-chart --validate-maintainers=false
-      - run: |
-          helm template test helm-chart -f helm-chart/ci/default-values.yaml | kubectl apply --dry-run=client -f -
-          helm template test helm-chart -f helm-chart/ci/full-values.yaml | kubectl apply --dry-run=client -f -
+      - name: helm template (schema/dry-run check, no live cluster)
+        run: |
+          # --validate=false: kubectl's dry-run=client still tries to fetch
+          # the OpenAPI schema from a live API server unless told not to,
+          # which fails with "connection refused" on a runner with no cluster.
+          helm template test helm-chart -f helm-chart/ci/default-values.yaml | kubectl apply --dry-run=client --validate=false -f -
+          helm template test helm-chart -f helm-chart/ci/full-values.yaml | kubectl apply --dry-run=client --validate=false -f -
 
   trivy:
     name: Trivy filesystem scan
@@ -125,7 +129,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.29.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .

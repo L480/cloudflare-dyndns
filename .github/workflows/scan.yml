@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Lowercase repository owner
         run: echo "REPO_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "${GITHUB_ENV}"
-      - uses: aquasecurity/trivy-action@0.29.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
           severity: HIGH,CRITICAL
