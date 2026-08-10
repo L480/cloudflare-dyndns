@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from ipaddress import IPv4Network
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
 from cloudflare_dyndns.config import Settings
+
+DOCS_ROOT = Path(__file__).resolve().parent.parent / "docs"
 
 
 def test_defaults() -> None:
@@ -76,3 +79,11 @@ def test_port_rejects_out_of_range(value: int) -> None:
 @pytest.mark.parametrize("value", [1, 80, 8080, 65535])
 def test_port_accepts_valid_values(value: int) -> None:
     assert Settings(port=value).port == value
+
+
+def test_every_setting_is_documented() -> None:
+    """docs/configuration.md must be kept in sync with Settings' fields."""
+    doc_text = (DOCS_ROOT / "configuration.md").read_text()
+    for field_name in Settings.model_fields:
+        env_var = f"CFDD_{field_name.upper()}"
+        assert env_var in doc_text, f"{env_var} is missing from docs/configuration.md"
