@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep this in sync with the base image in Dockerfile.
+  UV_VERSION: "0.8.17"
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --all-extras --dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  typecheck:
+    name: Typecheck (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --all-extras --dev
+      - run: uv run mypy
+
+  test:
+    name: Test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --all-extras --dev --python ${{ matrix.python-version }}
+      - run: uv run pytest
+      - if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
+          retention-days: 7
+
+  docker:
+    name: Docker build (smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: cloudflare-dyndns:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test
+        run: |
+          docker run -d --name cfdd \
+            --read-only --cap-drop=ALL --security-opt no-new-privileges \
+            -p 8080:8080 cloudflare-dyndns:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:8080/healthz; then break; fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8080/healthz
+          test "$(docker exec cfdd id -u)" = "10001"
+          docker logs cfdd
+          docker rm -f cfdd
+
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  helm:
+    name: Helm lint & template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - uses: helm/chart-testing-action@v2
+      - run: ct lint --charts helm-chart --validate-maintainers=false
+      - run: |
+          helm template test helm-chart -f helm-chart/ci/default-values.yaml | kubectl apply --dry-run=client -f -
+          helm template test helm-chart -f helm-chart/ci/full-values.yaml | kubectl apply --dry-run=client -f -
+
+  trivy:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: sarif
+          output: trivy-results.sarif
+      - if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif

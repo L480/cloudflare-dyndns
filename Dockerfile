@@ -1,12 +1,60 @@
-FROM python:3-alpine
+# syntax=docker/dockerfile:1
+
+# python:3.13-slim-bookworm, pinned by digest for reproducible builds.
+# Bump by re-resolving the tag and updating both the digest and this comment.
+ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8
+
+FROM ${PYTHON_IMAGE} AS builder
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    PIP_NO_CACHE_DIR=1
+
+RUN pip install --no-cache-dir uv==0.8.17
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
 
-COPY app.py ./
+COPY src/ src/
+COPY README.md LICENSE ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-CMD [ "python", "./app.py" ]
+FROM ${PYTHON_IMAGE} AS runtime
 
-EXPOSE 80
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=0.0.0
+
+LABEL org.opencontainers.image.title="cloudflare-dyndns" \
+      org.opencontainers.image.description="Cloudflare DynDNS middleware for AVM FRITZ!Box and other DynDNS clients" \
+      org.opencontainers.image.source="https://github.com/l480/cloudflare-dyndns" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.url="https://github.com/l480/cloudflare-dyndns" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="${VERSION}"
+
+RUN groupadd --gid 10001 appuser \
+    && useradd --uid 10001 --gid appuser --no-create-home --shell /usr/sbin/nologin appuser
+
+WORKDIR /app
+COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
+COPY --from=builder --chown=appuser:appuser /app/src /app/src
+
+ENV PATH="/app/.venv/bin:${PATH}" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    CFDD_PORT=8080
+
+EXPOSE 8080
+USER 10001:10001
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+
+ENTRYPOINT ["cloudflare-dyndns"]

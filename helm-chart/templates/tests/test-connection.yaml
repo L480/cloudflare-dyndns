@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "cloudflare-dyndns.fullname" . }}-test-connection"
+  labels:
+    {{- include "cloudflare-dyndns.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+    - name: wget
+      image: busybox:1.36
+      command:
+        [
+          "wget",
+          "--spider",
+          "-q",
+          "http://{{ include "cloudflare-dyndns.fullname" . }}:{{ .Values.service.port }}/healthz",
+        ]
+  restartPolicy: Never

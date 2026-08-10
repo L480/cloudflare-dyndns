@@ -1,0 +1,60 @@
+# Fixture for `ct lint` / `helm template` — exercises every optional feature.
+
+replicaCount: 2
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: dyndns.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: dyndns-tls
+      hosts:
+        - dyndns.example.com
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+
+config:
+  logLevel: DEBUG
+  allowedZones: "example.com,example.org"
+  createMissingRecords: true
+  trustedProxies: "10.0.0.0/8"
+  metricsEnabled: true
+
+extraEnv:
+  - name: EXTRA_EXAMPLE
+    value: "example"
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: "example"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: cloudflare-dyndns

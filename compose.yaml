@@ -1,0 +1,38 @@
+services:
+  cloudflare-dyndns:
+    image: ghcr.io/l480/cloudflare-dyndns:latest
+    # build: .
+    ports:
+      - "8080:8080"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    environment:
+      # See docs/configuration.md for the full list of CFDD_* settings.
+      # CFDD_LOG_LEVEL: INFO
+      # CFDD_LOG_FORMAT: json
+      # CFDD_ALLOWED_ZONES: example.com,example.org
+      # CFDD_CREATE_MISSING_RECORDS: "false"
+      # CFDD_DEFAULT_TTL: "1"
+      # CFDD_DEFAULT_PROXIED: "false"
+      # CFDD_ZONE_CACHE_TTL: "300"
+      # CFDD_RECORD_CACHE_TTL: "60"
+      # CFDD_CACHE_MAX_ENTRIES: "1024"
+      # CFDD_CF_TIMEOUT: "10.0"
+      # CFDD_CF_MAX_RETRIES: "2"
+      # CFDD_RATE_LIMIT_ENABLED: "true"
+      # CFDD_RATE_LIMIT_PER_MINUTE: "30"
+      # CFDD_RATE_LIMIT_BURST: "10"
+      # CFDD_TRUSTED_PROXIES: 10.0.0.0/8
+      # CFDD_METRICS_ENABLED: "false"
+      # CFDD_DOCS_ENABLED: "false"
+      CFDD_LOG_FORMAT: console
