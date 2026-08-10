@@ -60,3 +60,47 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+CFDD_* environment variables rendered from .Values.config
+*/}}
+{{- define "cloudflare-dyndns.env" -}}
+- name: CFDD_HOST
+  value: "0.0.0.0"
+- name: CFDD_PORT
+  value: "8080"
+- name: CFDD_LOG_LEVEL
+  value: {{ .Values.config.logLevel | quote }}
+- name: CFDD_LOG_FORMAT
+  value: {{ .Values.config.logFormat | quote }}
+- name: CFDD_ALLOWED_ZONES
+  value: {{ .Values.config.allowedZones | quote }}
+- name: CFDD_CREATE_MISSING_RECORDS
+  value: {{ .Values.config.createMissingRecords | quote }}
+- name: CFDD_DEFAULT_TTL
+  value: {{ .Values.config.defaultTtl | quote }}
+- name: CFDD_DEFAULT_PROXIED
+  value: {{ .Values.config.defaultProxied | quote }}
+- name: CFDD_ZONE_CACHE_TTL
+  value: {{ .Values.config.zoneCacheTtl | quote }}
+- name: CFDD_RECORD_CACHE_TTL
+  value: {{ .Values.config.recordCacheTtl | quote }}
+- name: CFDD_CACHE_MAX_ENTRIES
+  value: {{ .Values.config.cacheMaxEntries | quote }}
+- name: CFDD_CF_TIMEOUT
+  value: {{ .Values.config.cfTimeout | quote }}
+- name: CFDD_CF_MAX_RETRIES
+  value: {{ .Values.config.cfMaxRetries | quote }}
+- name: CFDD_RATE_LIMIT_ENABLED
+  value: {{ .Values.config.rateLimitEnabled | quote }}
+- name: CFDD_RATE_LIMIT_PER_MINUTE
+  value: {{ .Values.config.rateLimitPerMinute | quote }}
+- name: CFDD_RATE_LIMIT_BURST
+  value: {{ .Values.config.rateLimitBurst | quote }}
+- name: CFDD_TRUSTED_PROXIES
+  value: {{ .Values.config.trustedProxies | quote }}
+- name: CFDD_METRICS_ENABLED
+  value: {{ .Values.config.metricsEnabled | quote }}
+- name: CFDD_DOCS_ENABLED
+  value: {{ .Values.config.docsEnabled | quote }}
+{{- end }}

@@ -1,0 +1,32 @@
+name: Scheduled image scan
+
+# Nightly scan of the published `:latest` image so a newly-disclosed
+# base-image CVE surfaces without needing a new commit.
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy-image:
+    name: Trivy image scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Lowercase repository owner
+        run: echo "REPO_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "${GITHUB_ENV}"
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-image-results.sarif
+      - if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image-results.sarif

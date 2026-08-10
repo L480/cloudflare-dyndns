@@ -1,0 +1,97 @@
+[project]
+name = "cloudflare-dyndns"
+version = "0.0.0"
+description = "Cloudflare DynDNS middleware for AVM FRITZ!Box and other DynDNS clients"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Nico Struck", email = "mail@nico-struck.de" }]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Internet :: Name Service (DNS)",
+]
+dependencies = [
+  "cloudflare>=5,<6",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+]
+
+[project.optional-dependencies]
+metrics = ["prometheus-client>=0.21"]
+
+[project.scripts]
+cloudflare-dyndns = "cloudflare_dyndns.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/l480/cloudflare-dyndns"
+Issues = "https://github.com/l480/cloudflare-dyndns/issues"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "respx>=0.21",
+  "httpx>=0.27",
+  "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cloudflare_dyndns"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W",        # pycodestyle / pyflakes
+  "I",                  # isort
+  "N",                  # pep8-naming
+  "UP",                 # pyupgrade
+  "B",                  # bugbear
+  "A",                  # builtins shadowing
+  "C4",                 # comprehensions
+  "S",                  # bandit
+  "T20",                # no print
+  "SIM",                # simplify
+  "PTH",                # pathlib
+  "RUF",
+  "ASYNC",
+  "ANN",                # annotations
+]
+ignore = [
+  "ANN401",
+  "B008",   # FastAPI's `Depends(...)` in argument defaults is the documented DI pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ANN201", "ANN001"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = "cloudflare.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --cov=cloudflare_dyndns --cov-report=term-missing --cov-fail-under=90"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]

@@ -1,0 +1,70 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+        **Never paste your Cloudflare API token or full Update URL with the
+        token still in it.** Redact it first (see the field below).
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment method
+      options:
+        - Public hosted instance (dyndns.nicoo.org)
+        - Self-hosted Docker
+        - Self-hosted docker compose
+        - Self-hosted Kubernetes (Helm chart)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: image-tag
+    attributes:
+      label: Image tag / version
+      placeholder: e.g. v1.0.0, edge, sha-abc1234
+    validations:
+      required: false
+
+  - type: input
+    id: client
+    attributes:
+      label: Client
+      description: FRITZ!Box model + FRITZ!OS version, or the DynDNS client used (ddclient, inadyn, curl, ...)
+      placeholder: e.g. FRITZ!Box 7590, FRITZ!OS 7.57
+    validations:
+      required: true
+
+  - type: textarea
+    id: update-url
+    attributes:
+      label: Update URL (token redacted)
+      description: >
+        Paste the Update URL you configured, with the `token` value replaced
+        by `REDACTED`.
+      placeholder: "https://dyndns.example.com/?token=REDACTED&zone=example.com&record=www&ipv4=<ipaddr>"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Service log lines for the failing request
+      description: >
+        If self-hosting, include the JSON log line(s) for the failing
+        request (they never contain the token). If you're on the public
+        instance, describe what you observed (status code, response body).
+      render: json
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behaviour
+    validations:
+      required: true

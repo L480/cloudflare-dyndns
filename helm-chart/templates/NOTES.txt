@@ -1,0 +1,20 @@
+cloudflare-dyndns has been installed.
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+Your Update URL (paste this into your FRITZ!Box, replacing token/zone/record):
+
+  {{ if .tls }}https{{ else }}http{{ end }}://{{ .host }}{{ (index .paths 0).path }}?token=<your-cloudflare-token>&zone=<your-zone>&record=<your-record>&ipv4=<ipaddr>
+{{- end }}
+{{- else }}
+No Ingress is enabled. Port-forward to reach the service:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "cloudflare-dyndns.fullname" . }} 8080:{{ .Values.service.port }}
+
+Then use:
+
+  http://localhost:8080/?token=<your-cloudflare-token>&zone=<your-zone>&record=<your-record>&ipv4=<ipaddr>
+{{- end }}
+
+See docs/api.md and docs/clients.md in the repository for the full API
+contract and client configuration examples (FRITZ!Box, ddclient, inadyn).

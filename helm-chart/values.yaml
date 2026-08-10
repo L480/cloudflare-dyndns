@@ -6,26 +6,40 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/l480/cloudflare-dyndns
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automount the service account's API token; the app never talks to the
+  # Kubernetes API, so this stays false unless a specific deployment needs it.
+  automount: false
+  annotations: {}
+  name: ""
+
 podAnnotations: {}
+podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
 service:
   type: ClusterIP
@@ -35,7 +49,6 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
     - host: chart-example.local
@@ -47,20 +60,95 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+    # No CPU limit on purpose - the process should never be CPU-throttled
+    # into a slow/failed liveness probe.
+
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  failureThreshold: 30
+  periodSeconds: 1
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Application configuration, rendered into the container as CFDD_* env vars.
+# See docs/configuration.md for the full reference.
+config:
+  logLevel: INFO
+  logFormat: json
+  allowedZones: ""
+  createMissingRecords: false
+  defaultTtl: 1
+  defaultProxied: false
+  zoneCacheTtl: 300
+  recordCacheTtl: 60
+  cacheMaxEntries: 1024
+  cfTimeout: 10.0
+  cfMaxRetries: 2
+  rateLimitEnabled: true
+  rateLimitPerMinute: 30
+  rateLimitBurst: 10
+  trustedProxies: ""
+  metricsEnabled: false
+  docsEnabled: false
+
+# Extra environment variables, e.g. for secrets not covered by `config`.
+extraEnv: []
+envFrom: []
+
+extraVolumes: []
+extraVolumeMounts: []
 
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
+
+topologySpreadConstraints: []
+
+priorityClassName: ""
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: ""
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: ""
+  maxUnavailable: ""
+
+networkPolicy:
+  enabled: false
+  # Restrict inbound traffic to pods in this namespace with this label set,
+  # typically your ingress controller. Leave empty to allow all ingress.
+  ingressFrom: []
+  #  - namespaceSelector:
+  #      matchLabels:
+  #        kubernetes.io/metadata.name: ingress-nginx
