@@ -16,6 +16,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Group by ref so back-to-back pushes to main supersede each other (like
+  # ci.yml), but each tag gets its own group - a real release build should
+  # never be cancelled mid-push by another one.
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+
 jobs:
   image:
     name: Build & push image
