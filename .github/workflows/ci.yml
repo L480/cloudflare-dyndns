@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
       - uses: helm/chart-testing-action@v2
       - run: ct lint --charts helm-chart --validate-maintainers=false
       - name: helm template (render check)
