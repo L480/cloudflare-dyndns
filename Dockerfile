@@ -14,6 +14,19 @@ ENV UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never \
     PIP_NO_CACHE_DIR=1
 
+# build-essential is needed here (but not in the runtime stage) because
+# uvicorn[standard]'s C-extension deps (httptools, uvloop) have no
+# prebuilt wheels for linux/arm/v7 (and sometimes linux/arm64 depending on
+# the Python version), so `uv sync` falls back to compiling them from
+# source under QEMU emulation during the multi-arch release build.
+# DL3008 is intentionally not followed: build-essential is a metapackage
+# discarded with this stage, never shipped in the runtime image, so
+# pinning it to a Debian point-release buys no meaningful reproducibility.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv==0.8.17
 
 WORKDIR /app
