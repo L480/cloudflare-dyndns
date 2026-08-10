@@ -100,7 +100,7 @@ async def test_nic_update_multi_hostname(client: AsyncClient, cf_mock: respx.Moc
     cf_mock.get("/zones").mock(return_value=httpx.Response(200, json=ZONES_ENV))
 
     def dns_side_effect(request: httpx.Request) -> httpx.Response:
-        if "vpn.example.com" in str(request.url):
+        if request.url.params.get("name.exact") == "vpn.example.com":
             return httpx.Response(200, json=envelope([]))
         return httpx.Response(200, json=envelope([A_RECORD]))
 

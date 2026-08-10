@@ -73,8 +73,7 @@ async def test_multi_record_all_success(cf_mock: respx.MockRouter) -> None:
     cf_mock.get("/zones").mock(return_value=httpx.Response(200, json=ZONE_ENV))
 
     def dns_records_side_effect(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        if "www.example.com" in url:
+        if request.url.params.get("name.exact") == "www.example.com":
             return httpx.Response(200, json=envelope([_a_record("www.example.com")]))
         return httpx.Response(200, json=envelope([_a_record("vpn.example.com")]))
 
@@ -98,8 +97,7 @@ async def test_multi_record_partial_failure_returns_207(cf_mock: respx.MockRoute
     cf_mock.get("/zones").mock(return_value=httpx.Response(200, json=ZONE_ENV))
 
     def dns_records_side_effect(request: httpx.Request) -> httpx.Response:
-        url = str(request.url)
-        if "www.example.com" in url:
+        if request.url.params.get("name.exact") == "www.example.com":
             return httpx.Response(200, json=envelope([_a_record("www.example.com")]))
         return httpx.Response(200, json=envelope([]))  # vpn record missing
 
