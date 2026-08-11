@@ -77,6 +77,11 @@ WORKDIR /app
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --from=builder --chown=appuser:appuser /app/src /app/src
 
+# Trivy alert #7 (CVE-2026-59890) is in the copied app virtualenv's
+# setuptools, not the system one upgraded above.
+# hadolint ignore=DL3013
+RUN /app/.venv/bin/pip install --no-cache-dir --upgrade setuptools
+
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
