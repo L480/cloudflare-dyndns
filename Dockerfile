@@ -73,8 +73,18 @@ LABEL org.opencontainers.image.title="cloudflare-dyndns" \
 # pip's unreleased main branch so far, so relying on pip's own vendor
 # bundle can't clear this finding yet. Installing msgpack as a real
 # top-level package at a fixed version does.
-# hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade pip setuptools "msgpack>=1.2.1"
+#
+# msgpack ships no linux/arm/v7 wheel, so it has to compile its C
+# extension there. build-essential is installed just for this RUN and
+# purged again in the same layer, so the compiler never ends up in the
+# shipped image (same reasoning as the builder stage, but scoped here
+# since the runtime stage otherwise has no need for a compiler at all).
+# hadolint ignore=DL3008,DL3013
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && pip install --no-cache-dir --upgrade pip setuptools "msgpack>=1.2.1" \
+    && apt-get purge -y --auto-remove build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --no-create-home --shell /usr/sbin/nologin appuser
