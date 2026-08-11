@@ -45,6 +45,10 @@ COPY README.md LICENSE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --extra metrics
 
+# Keep the app virtualenv's setuptools above known vulnerable releases
+# (e.g. CVE-2025-47273 fixed in 78.1.1).
+RUN /app/.venv/bin/pip install --no-cache-dir --upgrade "setuptools>=78.1.1"
+
 # hadolint ignore=DL3006
 FROM ${PYTHON_IMAGE} AS runtime
 
