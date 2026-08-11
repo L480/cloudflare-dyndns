@@ -2,7 +2,12 @@
 
 # python:3.13-slim-bookworm, pinned by digest for reproducible builds.
 # Bump by re-resolving the tag and updating both the digest and this comment.
-ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8
+# Re-resolved 2026-08-11: the previous digest had drifted far enough behind
+# that its baked-in Debian packages (perl, zlib, sqlite, libblkid, ...)
+# had accumulated 180+ HIGH/CRITICAL CVEs with upstream fixes already
+# available in a newer bookworm point release - none of these came from
+# our own dependencies, just an aging base-image pin.
+ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:00faa2debb87529f9f0764e9491d8ba400a3678976616c3bd7cb193745ac20d1
 
 # DL3006 is a false positive here: hadolint can't resolve the digest
 # through the ARG substitution above, but PYTHON_IMAGE is pinned by digest.
