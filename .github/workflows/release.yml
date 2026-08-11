@@ -1,15 +1,11 @@
 name: Release
 
-# Publishing happens ONLY here, and ONLY on:
-#   - push to main            -> image tags `edge`, `sha-<short-sha>`
-#   - a `v*` tag               -> image tags `X.Y.Z`, `X.Y`, `X`, `latest`
-#                                  + Helm chart push + GitHub Release
-# A push to any other branch never publishes anything (fixes the old
-# docker-build-push.yml / helmchart-push.yml running on `push:` with no
-# ref filter, which let any branch push overwrite the public `:latest`).
+# Publishing happens ONLY here, and ONLY when a `v*` release tag is pushed:
+#   -> image tags `X.Y.Z`, `X.Y`, `X`, `latest` + Helm chart push + GitHub
+#      Release. Plain pushes to main (or any other branch) never publish
+#      anything - a build only happens when a release is actually cut.
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -17,11 +13,11 @@ permissions:
   contents: read
 
 concurrency:
-  # Group by ref so back-to-back pushes to main supersede each other (like
-  # ci.yml), but each tag gets its own group - a real release build should
-  # never be cancelled mid-push by another one.
+  # Each tag gets its own group - a real release build should never be
+  # cancelled mid-push by another one, so this only guards against the same
+  # tag somehow being pushed twice.
   group: release-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+  cancel-in-progress: false
 
 jobs:
   image:
@@ -53,12 +49,11 @@ jobs:
         with:
           images: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns
           tags: |
-            type=edge,branch=main
             type=sha,prefix=sha-,format=short
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest
 
       - id: build
         uses: docker/build-push-action@v7
@@ -135,7 +130,19 @@ jobs:
         with:
           name: helm-chart
           path: /tmp/chart
+
+      - id: tag_message
+        name: Read annotated tag message
+        run: |
+          {
+            echo 'body<<EOF'
+            git tag -l --format='%(contents)' "${GITHUB_REF_NAME}"
+            echo EOF
+          } >> "${GITHUB_OUTPUT}"
+
       - uses: softprops/action-gh-release@v3
         with:
+          body: ${{ steps.tag_message.outputs.body }}
+          append_body: true
           generate_release_notes: true
           files: /tmp/chart/*
