@@ -24,6 +24,12 @@ jobs:
         with:
           image-ref: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
           severity: HIGH,CRITICAL
+          # Debian's security fixes lag well behind upstream disclosure for
+          # many packages, so without this, Trivy floods Code Scanning with
+          # CVEs that have no available fix yet regardless of how current
+          # the base image digest is - nothing to act on until Debian ships
+          # a patch. This keeps the alert list to things we can actually fix.
+          ignore-unfixed: true
           format: sarif
           output: trivy-image-results.sarif
       - if: always()
