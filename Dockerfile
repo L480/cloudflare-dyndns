@@ -65,10 +65,16 @@ LABEL org.opencontainers.image.title="cloudflare-dyndns" \
 # touches the base image's system pip/setuptools, but Trivy still scans
 # them since they're present in the image. Upgrading here (rather than
 # pinning) keeps pace with whatever fixes are newer than what's baked
-# into the upstream python image's ensurepip bootstrap - pip vendors its
-# own copy of msgpack internally, so this also covers that CVE surface.
+# into the upstream python image's ensurepip bootstrap.
+#
+# msgpack is pinned explicitly (not just left to "pip vendors its own
+# copy"): the latest pip release still vendors msgpack 1.1.2, which
+# predates the fix for GHSA-6v7p-g79w-8964 - that fix only exists on
+# pip's unreleased main branch so far, so relying on pip's own vendor
+# bundle can't clear this finding yet. Installing msgpack as a real
+# top-level package at a fixed version does.
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade pip setuptools
+RUN pip install --no-cache-dir --upgrade pip setuptools "msgpack>=1.2.1"
 
 RUN groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --no-create-home --shell /usr/sbin/nologin appuser
