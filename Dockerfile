@@ -33,12 +33,12 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+    uv sync --frozen --no-install-project --no-dev --extra metrics
 
 COPY src/ src/
 COPY README.md LICENSE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen --no-dev --extra metrics
 
 # hadolint ignore=DL3006
 FROM ${PYTHON_IMAGE} AS runtime
