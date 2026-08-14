@@ -6,6 +6,13 @@ project does not yet follow strict semantic versioning pre-1.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Cast the TTL read back from Cloudflare's API to `int` before reusing it
+  in a record update. The Cloudflare SDK can return the TTL as a float
+  (e.g. `60.0`), which the `dns.records.edit` endpoint then rejects with
+  `Failed to parse. ttl must be a number.` (closes #65).
+
 ## [1.0.0] - Unreleased
 
 Complete rewrite of the service per `plan.md`.

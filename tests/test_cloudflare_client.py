@@ -96,6 +96,18 @@ async def test_get_record_missing_returns_none(cf_mock: respx.MockRouter) -> Non
     assert record is None
 
 
+async def test_get_record_normalizes_float_ttl_to_int(cf_mock: respx.MockRouter) -> None:
+    cf_mock.get("/zones/zone123/dns_records").mock(
+        return_value=httpx.Response(200, json=envelope([{**A_RECORD, "ttl": 60.0}]))
+    )
+    cf = _client()
+    async with cf.client_for(TOKEN) as client:
+        record = await cf.get_record(client, TOKEN, "zone123", "www.example.com", "A")
+    assert record is not None
+    assert record.ttl == 60
+    assert isinstance(record.ttl, int)
+
+
 async def test_get_record_cache_hit_issues_no_request(cf_mock: respx.MockRouter) -> None:
     route = cf_mock.get("/zones/zone123/dns_records").mock(
         return_value=httpx.Response(200, json=envelope([A_RECORD]))
