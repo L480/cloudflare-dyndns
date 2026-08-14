@@ -140,7 +140,7 @@ def _to_dns_record(raw: object) -> DnsRecord:
         name=obj.name,
         type=obj.type,
         content=obj.content or "",
-        ttl=obj.ttl,
+        ttl=int(obj.ttl),
         proxied=obj.proxied,
     )
 
