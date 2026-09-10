@@ -6,6 +6,17 @@ project does not yet follow strict semantic versioning pre-1.0.
 
 ## [Unreleased]
 
+### Added
+
+- `ipv6prefix` + `ipv6suffix` parameters on `GET /` for publishing LAN
+  hosts behind a FRITZ!Box. `ipv6prefix=<ip6lanprefix>` carries the
+  delegated LAN prefix and `ipv6suffix=<record>:<interface-id>` (comma-
+  separated or repeated) gives each record its own interface ID; the
+  server masks the prefix, ORs in the interface ID, validates the result
+  with `ipaddress`, and writes it as that record's `AAAA`. Records without
+  a suffix keep using `ipv6`, so one Update URL updates both `A` records,
+  the box's `AAAA`, and the host's `AAAA`. See `docs/api.md`.
+
 ### Fixed
 
 - `CFDD_ALLOWED_ZONES` and `CFDD_TRUSTED_PROXIES` crashed on startup with

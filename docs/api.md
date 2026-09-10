@@ -14,9 +14,11 @@ every documented status/body combination below — this is enforced by
 | `zone` | yes | Zone apex, e.g. `example.com`. Case-insensitive; trailing dot stripped. |
 | `record` | no | Subdomain label(s), e.g. `www` or `home.iot`. Empty string, missing, `@`, and a value equal to `zone` all mean the **zone apex**. Comma-separated or repeated for multiple records (see below). |
 | `ipv4` | no\*\* | IPv4 literal. |
-| `ipv6` | no\*\* | IPv6 literal. |
+| `ipv6` | no\*\* | IPv6 literal. Applied to every record that has no `ipv6suffix` entry. |
+| `ipv6prefix` | no | IPv6 prefix, e.g. `2001:db8:1:2::/64` (the FRITZ!Box `<ip6lanprefix>` placeholder). A bare address without `/len` is treated as a `/64`; host bits are masked off. Required if `ipv6suffix` is given. |
+| `ipv6suffix` | no\*\* | Per-record interface ID as `<record>:<interface-id>`, e.g. `host:9e6b:ff:fe50:179a`. Comma-separated or repeated for multiple records. Each listed record's AAAA is set to `ipv6prefix` + interface ID instead of `ipv6`. Requires `ipv6prefix`; every record named here must also appear in `record`. See below. |
 
-\*\* at least one of `ipv4` / `ipv6` is required.
+\*\* at least one of `ipv4` / `ipv6` / `ipv6suffix` is required.
 
 ### Responses
 
@@ -30,6 +32,10 @@ All `Content-Type: application/json`.
 | Missing `zone` | `400` | `{"status": "error", "message": "Missing zone URL parameter."}` |
 | Missing both IPs | `400` | `{"status": "error", "message": "Missing ipv4 or ipv6 URL parameter."}` |
 | Invalid IP literal | `400` | `{"status": "error", "message": "Invalid ipv4 URL parameter."}` (or `ipv6`) |
+| `ipv6suffix` without `ipv6prefix` (or vice versa) | `400` | `{"status": "error", "message": "Missing ipv6prefix URL parameter."}` (or `ipv6suffix`) |
+| Unparseable `ipv6prefix` | `400` | `{"status": "error", "message": "Invalid ipv6prefix URL parameter."}` |
+| Malformed `ipv6suffix`, interface ID overlapping the prefix, or a record listed twice | `400` | `{"status": "error", "message": "Invalid ipv6suffix URL parameter."}` |
+| `ipv6suffix` names a record not in `record` | `400` | `{"status": "error", "message": "Record {fqdn} in ipv6suffix is not in record URL parameter."}` |
 | Bad/expired token | `401` | `{"status": "error", "message": "Cloudflare authentication failed."}` |
 | Token lacks permission on the zone | `403` | `{"status": "error", "message": "Cloudflare authorization failed."}` |
 | Zone not in `CFDD_ALLOWED_ZONES` | `403` | `{"status": "error", "message": "Zone {zone} is not allowed on this instance."}` |
@@ -69,6 +75,42 @@ like:
 All records are updated for all supplied IP families. A single-record
 request always keeps the legacy single-status behaviour (200 or a single
 error code); only a multi-record request can return `207`.
+
+### Per-record IPv6 interface IDs (`ipv6prefix` + `ipv6suffix`)
+
+A FRITZ!Box knows its own WAN IPv6 address (`<ip6addr>`) and the prefix it
+delegates to the LAN (`<ip6lanprefix>`), but not the addresses of the hosts
+behind it. Hosts with a stable interface ID (EUI-64, a static token, or a
+fixed DHCPv6 lease) can still be published: the server combines the LAN
+prefix with a per-record interface ID.
+
+```
+/?token=...&zone=example.com&record=fritz,host
+  &ipv4=<ipaddr>&ipv6=<ip6addr>
+  &ipv6prefix=<ip6lanprefix>&ipv6suffix=host:9e6b:ff:fe50:179a
+```
+
+With `<ip6lanprefix>` = `2001:db8:1:2::/64` this single call writes:
+
+| Record | `A` | `AAAA` |
+|---|---|---|
+| `fritz.example.com` | `<ipaddr>` | `<ip6addr>` (the box itself) |
+| `host.example.com` | `<ipaddr>` | `2001:db8:1:2:9e6b:ff:fe50:179a` (prefix + interface ID) |
+
+Rules:
+
+- `ipv6suffix` entries are `<record>:<interface-id>`; the record part uses
+  the same normalisation as `record` (`@` or the zone name for the apex).
+  Repeat the parameter or separate entries with commas.
+- The interface ID is parsed as the low bits of an IPv6 address
+  (`9e6b:ff:fe50:179a` and `::9e6b:ff:fe50:179a` are equivalent) and must
+  fit entirely inside the host part of `ipv6prefix`.
+- `ipv6prefix` is masked to its prefix length before combining, so a value
+  with host bits set (or a shorter prefix such as a `/56`) is accepted.
+- Records with a suffix ignore `ipv6`; records without one use `ipv6` as
+  before, and get no `AAAA` update if `ipv6` is absent. `ipv4` applies to
+  every record either way.
+- `ipv6prefix` and `ipv6suffix` must be supplied together.
 
 ## `GET /nic/update` — dyndns2-compatible endpoint
 

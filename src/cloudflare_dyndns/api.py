@@ -4,7 +4,7 @@ import base64
 import binascii
 
 import cloudflare
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from starlette.responses import JSONResponse, PlainTextResponse
 
 from cloudflare_dyndns.cloudflare_client import CloudflareClient
@@ -63,6 +63,8 @@ async def legacy_update(
     record: str | None = None,
     ipv4: str | None = None,
     ipv6: str | None = None,
+    ipv6prefix: str | None = None,
+    ipv6suffix: list[str] | None = Query(None),
     settings: Settings = Depends(get_app_settings),
     cf_client: CloudflareClient = Depends(get_cf_client),
 ) -> JSONResponse:
@@ -70,7 +72,14 @@ async def legacy_update(
     if not resolved_token:
         raise MissingParameterError("Missing token URL parameter.")
 
-    query = build_update_query(zone=zone, record=record, ipv4=ipv4, ipv6=ipv6)
+    query = build_update_query(
+        zone=zone,
+        record=record,
+        ipv4=ipv4,
+        ipv6=ipv6,
+        ipv6prefix=ipv6prefix,
+        ipv6suffix=ipv6suffix,
+    )
     response, status_code = await perform_update(query, resolved_token, settings, cf_client)
     return JSONResponse(response.model_dump(exclude_none=True), status_code=status_code)
 

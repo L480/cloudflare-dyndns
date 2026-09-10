@@ -29,17 +29,15 @@ async def perform_update(
     if settings.allowed_zones and zone not in settings.allowed_zones:
         raise ZoneNotAllowedError(f"Zone {zone} is not allowed on this instance.")
 
-    families: list[RecordType] = []
-    if query.ipv4 is not None:
-        families.append("A")
-    if query.ipv6 is not None:
-        families.append("AAAA")
-
-    work_items: list[WorkItem] = [
-        (build_fqdn(record, zone), rtype, str(query.ipv4) if rtype == "A" else str(query.ipv6))
-        for record in query.records
-        for rtype in families
-    ]
+    work_items: list[WorkItem] = []
+    for record in query.records:
+        record_fqdn = build_fqdn(record, zone)
+        if query.ipv4 is not None:
+            work_items.append((record_fqdn, "A", str(query.ipv4)))
+        ipv6 = query.ipv6_for(record)
+        if ipv6 is not None:
+            work_items.append((record_fqdn, "AAAA", str(ipv6)))
+    families: list[RecordType] = sorted({rtype for _, rtype, _ in work_items})
 
     async with cf_client.client_for(token) as client:
         zone_id = await cf_client.get_zone_id(client, token, zone)
