@@ -1,20 +1,30 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from ipaddress import IPv4Network, IPv6Network
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 LogFormat = Literal["json", "console"]
 
 
 def _split_csv(value: object) -> object:
-    if isinstance(value, str):
-        return [item.strip() for item in value.split(",") if item.strip()]
-    return value
+    """Parse a list-valued setting given as a string.
+
+    Accepts the documented comma-separated form (``a.com,b.com``) as well as a
+    JSON array (``["a.com","b.com"]``), which was the only form that worked
+    before ``NoDecode`` was added and may still be in use.
+    """
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    if stripped.startswith("["):
+        return json.loads(stripped)
+    return [item.strip() for item in stripped.split(",") if item.strip()]
 
 
 class Settings(BaseSettings):
@@ -24,7 +34,7 @@ class Settings(BaseSettings):
     port: int = 8080
     log_level: LogLevel = "INFO"
     log_format: LogFormat = "json"
-    allowed_zones: list[str] = []
+    allowed_zones: Annotated[list[str], NoDecode] = []
     create_missing_records: bool = False
     default_ttl: int = 1
     default_proxied: bool = False
@@ -36,7 +46,7 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_per_minute: int = 30
     rate_limit_burst: int = 10
-    trusted_proxies: list[IPv4Network | IPv6Network] = []
+    trusted_proxies: Annotated[list[IPv4Network | IPv6Network], NoDecode] = []
     metrics_enabled: bool = False
     docs_enabled: bool = False
 

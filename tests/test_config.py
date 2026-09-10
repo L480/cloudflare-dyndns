@@ -59,6 +59,41 @@ def test_trusted_proxies_comma_parsing() -> None:
     assert IPv4Network("192.168.0.0/16") in settings.trusted_proxies
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("sample.com,sample.de", ["sample.com", "sample.de"]),
+        ("sample.com, Sample.DE.", ["sample.com", "sample.de"]),
+        ("sample.com", ["sample.com"]),
+        ('["sample.com","sample.de"]', ["sample.com", "sample.de"]),
+        ("", []),
+    ],
+)
+def test_allowed_zones_from_env(
+    monkeypatch: pytest.MonkeyPatch, raw: str, expected: list[str]
+) -> None:
+    """Regression: pydantic-settings must not JSON-decode the CSV form."""
+    monkeypatch.setenv("CFDD_ALLOWED_ZONES", raw)
+    settings = Settings()
+    assert settings.allowed_zones == expected
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["10.0.0.0/8,192.168.0.0/16", '["10.0.0.0/8", "192.168.0.0/16"]'],
+)
+def test_trusted_proxies_from_env(monkeypatch: pytest.MonkeyPatch, raw: str) -> None:
+    monkeypatch.setenv("CFDD_TRUSTED_PROXIES", raw)
+    settings = Settings()
+    assert settings.trusted_proxies == [IPv4Network("10.0.0.0/8"), IPv4Network("192.168.0.0/16")]
+
+
+def test_trusted_proxies_from_env_rejects_invalid_cidr(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CFDD_TRUSTED_PROXIES", "10.0.0.0/8,not-a-network")
+    with pytest.raises(ValidationError):
+        Settings()
+
+
 @pytest.mark.parametrize("value", [0, 59, 86401, -1])
 def test_default_ttl_rejects_out_of_range(value: int) -> None:
     with pytest.raises(ValidationError):

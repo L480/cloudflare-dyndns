@@ -8,6 +8,13 @@ project does not yet follow strict semantic versioning pre-1.0.
 
 ### Fixed
 
+- `CFDD_ALLOWED_ZONES` and `CFDD_TRUSTED_PROXIES` crashed on startup with
+  `json.decoder.JSONDecodeError` when given in the documented
+  comma-separated form (e.g. `sample.com,sample.de`). pydantic-settings
+  JSON-decodes list-typed fields before validators run, so the CSV splitter
+  never got a chance to execute. Both fields are now marked `NoDecode`; the
+  comma-separated form works and a JSON array (the previous workaround) is
+  still accepted.
 - Cast the TTL read back from Cloudflare's API to `int` before reusing it
   in a record update. The Cloudflare SDK can return the TTL as a float
   (e.g. `60.0`), which the `dns.records.edit` endpoint then rejects with
