@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 import respx
@@ -128,3 +130,76 @@ async def test_allowlist_rejects_disallowed_zone(cf_mock: respx.MockRouter) -> N
         await perform_update(query, TOKEN, settings, cf_client)
 
     assert exc_info.value.message == "Zone example.com is not allowed on this instance."
+
+
+async def test_ipv6_suffix_gives_each_record_its_own_aaaa(cf_mock: respx.MockRouter) -> None:
+    cf_mock.get("/zones").mock(return_value=httpx.Response(200, json=ZONE_ENV))
+    cf_mock.get("/zones/zone123/dns_records").mock(
+        return_value=httpx.Response(200, json=envelope([]))
+    )
+    created: list[dict[str, object]] = []
+
+    def create_side_effect(request: httpx.Request) -> httpx.Response:
+        body: dict[str, object] = json.loads(request.content)
+        created.append(body)
+        record = {**body, "id": f"rec-{body['name']}-{body['type']}"}
+        return httpx.Response(200, json=envelope(record))
+
+    cf_mock.post("/zones/zone123/dns_records").mock(side_effect=create_side_effect)
+
+    settings = Settings(rate_limit_enabled=False, create_missing_records=True)
+    cf_client = CloudflareClient(settings)
+    query = build_update_query(
+        zone="example.com",
+        record="fritz,host",
+        ipv4="5.6.7.8",
+        ipv6="2001:db8:1:2::1",
+        ipv6prefix="2001:db8:1:2::/64",
+        ipv6suffix=["host:9e6b:ff:fe50:179a"],
+    )
+
+    response, status_code = await perform_update(query, TOKEN, settings, cf_client)
+
+    assert status_code == 200
+    assert response.status == "success"
+    assert {(b["name"], b["type"]): b["content"] for b in created} == {
+        ("fritz.example.com", "A"): "5.6.7.8",
+        ("fritz.example.com", "AAAA"): "2001:db8:1:2::1",
+        ("host.example.com", "A"): "5.6.7.8",
+        ("host.example.com", "AAAA"): "2001:db8:1:2:9e6b:ff:fe50:179a",
+    }
+
+
+async def test_ipv6_suffix_only_skips_records_without_an_address(
+    cf_mock: respx.MockRouter,
+) -> None:
+    cf_mock.get("/zones").mock(return_value=httpx.Response(200, json=ZONE_ENV))
+    cf_mock.get("/zones/zone123/dns_records").mock(
+        return_value=httpx.Response(200, json=envelope([]))
+    )
+    created: list[dict[str, object]] = []
+
+    def create_side_effect(request: httpx.Request) -> httpx.Response:
+        body: dict[str, object] = json.loads(request.content)
+        created.append(body)
+        return httpx.Response(200, json=envelope({**body, "id": "rec-new"}))
+
+    cf_mock.post("/zones/zone123/dns_records").mock(side_effect=create_side_effect)
+
+    settings = Settings(rate_limit_enabled=False, create_missing_records=True)
+    cf_client = CloudflareClient(settings)
+    query = build_update_query(
+        zone="example.com",
+        record="fritz,host",
+        ipv4=None,
+        ipv6=None,
+        ipv6prefix="2001:db8:1:2::/64",
+        ipv6suffix=["host:1"],
+    )
+
+    response, _ = await perform_update(query, TOKEN, settings, cf_client)
+
+    assert [(r.fqdn, r.type, r.content) for r in response.results] == [
+        ("host.example.com", "AAAA", "2001:db8:1:2::1")
+    ]
+    assert len(created) == 1

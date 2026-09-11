@@ -9,6 +9,29 @@
 | Username | `admin` | Any value; unused by this service. |
 | Password | your Cloudflare API token | The token created per the README. |
 
+### Publishing LAN hosts too (`<ip6lanprefix>`)
+
+The FRITZ!Box only knows its own addresses, but it also knows the IPv6
+prefix it hands out to the LAN. If a host behind the box has a stable
+interface ID (the last 64 bits of its address: EUI-64 derived from the MAC,
+a fixed token, or a static DHCPv6 lease), one Update URL can publish the
+box **and** the host:
+
+```
+https://dyndns.nicoo.org/?token=<pass>&zone=example.com&record=fritz,host&ipv4=<ipaddr>&ipv6=<ip6addr>&ipv6prefix=<ip6lanprefix>&ipv6suffix=host:9e6b:ff:fe50:179a
+```
+
+- `fritz.example.com` gets `A` = `<ipaddr>` and `AAAA` = `<ip6addr>`.
+- `host.example.com` gets `A` = `<ipaddr>` (port-forward through the box)
+  and `AAAA` = `<ip6lanprefix>` combined with `9e6b:ff:fe50:179a`.
+
+Find the interface ID in the host's own address (everything after the
+first four groups), or in the FRITZ!Box under *Home Network → Network →
+device details*. Add more hosts with more `ipv6suffix` entries
+(`&ipv6suffix=nas:1:2:3:4` or `&ipv6suffix=host:...,nas:...`); every host
+named there must also be listed in `record`. Full semantics:
+[`docs/api.md`](./api.md#per-record-ipv6-interface-ids-ipv6prefix--ipv6suffix).
+
 ### Troubleshooting (issue #36: "FRITZ!Box not updating")
 
 1. **Check that the router actually calls the service.** Every request is

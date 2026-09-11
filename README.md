@@ -63,6 +63,11 @@ https://dyndns.nicoo.org/?token=<pass>&record=www&zone=example.com&ipv4=<ipaddr>
 | Username          | `admin` | Any value you want. |
 | Password          | ●●●●●● | The API token you created earlier. |
 
+To also publish hosts behind the box, add `&ipv6prefix=<ip6lanprefix>` and
+one `&ipv6suffix=<record>:<interface-id>` per host — the server combines the
+LAN prefix with each host's interface ID for its `AAAA` record. Details in
+[`docs/clients.md`](./docs/clients.md#publishing-lan-hosts-too-ip6lanprefix).
+
 More clients (`ddclient`, `inadyn`, `curl`) and troubleshooting:
 [`docs/clients.md`](./docs/clients.md).
 
