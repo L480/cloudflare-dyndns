@@ -16,26 +16,40 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
       security-events: write
     steps:
       - name: Lowercase repository owner
         run: echo "REPO_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "${GITHUB_ENV}"
-      - uses: aquasecurity/trivy-action@v0.36.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: image
+        name: Check that the image has been published
+        run: |
+          if docker manifest inspect "ghcr.io/${REPO_OWNER}/cloudflare-dyndns:latest" > /dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "::notice::ghcr.io/${REPO_OWNER}/cloudflare-dyndns:latest does not exist yet; skipping the scan"
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+      - if: steps.image.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/${{ env.REPO_OWNER }}/cloudflare-dyndns:latest
           severity: HIGH,CRITICAL
-          # Debian's security fixes lag well behind upstream disclosure for
-          # many packages, so without this, Trivy floods Code Scanning with
-          # CVEs that have no available fix yet regardless of how current
-          # the base image digest is - nothing to act on until Debian ships
-          # a patch. This keeps the alert list to things we can actually fix.
+          # Debian security fixes lag upstream disclosure for many packages, so
+          # without this Trivy floods Code Scanning with CVEs that have no
+          # available fix yet.
           ignore-unfixed: true
+          # Otherwise the SARIF output ignores `severity` and uploads every level.
+          limit-severities-for-sarif: true
           format: sarif
           output: trivy-image-results.sarif
-          # Without this, trivy-action drops the severity filter for SARIF
-          # output and uploads every severity to Code Scanning.
-          limit-severities-for-sarif: true
-      - if: always()
-        uses: github/codeql-action/upload-sarif@v4
+      # SARIF upload needs a public repo or GHAS.
+      - if: always() && steps.image.outputs.exists == 'true' && !github.event.repository.private
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: trivy-image-results.sarif
