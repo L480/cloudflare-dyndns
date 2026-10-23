@@ -1,18 +1,14 @@
 # syntax=docker/dockerfile:1
 
-# python:3.13-slim-bookworm, pinned by digest for reproducible builds.
-# Bump by re-resolving the tag and updating both the digest and this comment.
-# Re-resolved 2026-08-11: the previous digest had drifted far enough behind
-# that its baked-in Debian packages (perl, zlib, sqlite, libblkid, ...)
-# had accumulated 180+ HIGH/CRITICAL CVEs with upstream fixes already
-# available in a newer bookworm point release - none of these came from
-# our own dependencies, just an aging base-image pin.
-ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:00faa2debb87529f9f0764e9491d8ba400a3678976616c3bd7cb193745ac20d1
-
-# DL3006 is a false positive here: hadolint can't resolve the digest
-# through the ARG substitution above, but PYTHON_IMAGE is pinned by digest.
-# hadolint ignore=DL3006
-FROM ${PYTHON_IMAGE} AS builder
+# Base image is pinned by digest for reproducible builds. The reference is
+# written out in each FROM line (not via an ARG) on purpose: Dependabot's
+# docker ecosystem can't resolve ARG substitution in FROM, so with an ARG
+# the digest silently never got bumped and the image drifted into dozens of
+# already-fixed Debian CVEs. Keep both FROM lines on the same reference.
+#
+# Debian 13 (trixie) rather than bookworm: bookworm is oldstable and only
+# gets LTS security updates now.
+FROM python:3.13-slim-trixie@sha256:57b29a7c050c4e679e4bea572e14b3965cf4b5839de2da49d55e49ffc4024f39 AS builder
 
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
@@ -45,8 +41,7 @@ COPY README.md LICENSE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --extra metrics
 
-# hadolint ignore=DL3006
-FROM ${PYTHON_IMAGE} AS runtime
+FROM python:3.13-slim-trixie@sha256:57b29a7c050c4e679e4bea572e14b3965cf4b5839de2da49d55e49ffc4024f39 AS runtime
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -61,30 +56,12 @@ LABEL org.opencontainers.image.title="cloudflare-dyndns" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.version="${VERSION}"
 
-# The app runs entirely out of /app/.venv (see PATH below) and never
-# touches the base image's system pip/setuptools, but Trivy still scans
-# them since they're present in the image. Upgrading here (rather than
-# pinning) keeps pace with whatever fixes are newer than what's baked
-# into the upstream python image's ensurepip bootstrap.
-#
-# msgpack is pinned explicitly (not just left to "pip vendors its own
-# copy"): the latest pip release still vendors msgpack 1.1.2, which
-# predates the fix for GHSA-6v7p-g79w-8964 - that fix only exists on
-# pip's unreleased main branch so far, so relying on pip's own vendor
-# bundle can't clear this finding yet. Installing msgpack as a real
-# top-level package at a fixed version does.
-#
-# msgpack ships no linux/arm/v7 wheel, so it has to compile its C
-# extension there. build-essential is installed just for this RUN and
-# purged again in the same layer, so the compiler never ends up in the
-# shipped image (same reasoning as the builder stage, but scoped here
-# since the runtime stage otherwise has no need for a compiler at all).
-# hadolint ignore=DL3008,DL3013
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
-    && pip install --no-cache-dir --upgrade pip setuptools "msgpack>=1.2.1" \
-    && apt-get purge -y --auto-remove build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# The app runs entirely out of /app/.venv (see PATH below) and never needs
+# the base image's system pip. pip vendors its own copies of urllib3,
+# msgpack, setuptools etc. (pip/_vendor/vendor.txt), which Trivy reports
+# and which only get fixed whenever pip cuts a release. Removing pip from
+# the runtime image drops all of that attack surface instead of chasing it.
+RUN python -m pip uninstall -y pip
 
 RUN groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --no-create-home --shell /usr/sbin/nologin appuser

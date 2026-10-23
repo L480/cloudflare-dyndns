@@ -31,6 +31,18 @@ project does not yet follow strict semantic versioning pre-1.0.
   (e.g. `60.0`), which the `dns.records.edit` endpoint then rejects with
   `Failed to parse. ttl must be a number.` (closes #65).
 
+### Security
+
+- Container base image moved to `python:3.13-slim-trixie` (Debian 13) at
+  a current digest. The old bookworm pin had drifted and carried fixed
+  HIGH/CRITICAL CVEs in `perl-base` and `libpcre2-8-0`. The digest now
+  sits directly in the `FROM` lines so Dependabot can bump it (it can't
+  resolve a digest passed through an `ARG`).
+- The runtime image no longer ships the system `pip`. Its vendored
+  `urllib3`, `msgpack` and `setuptools` were flagged by Trivy and are not
+  needed at runtime (the app runs from `/app/.venv`).
+- `certifi` bumped to 2026.10.19 (GHSA-6q48-6c7w-9gw2).
+
 ## [1.0.0] - Unreleased
 
 Complete rewrite of the service per `plan.md`.
