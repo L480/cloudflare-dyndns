@@ -141,6 +141,9 @@ jobs:
           exit-code: "1"
           format: sarif
           output: trivy-results.sarif
+          # Without this, trivy-action drops the severity filter for SARIF
+          # output and uploads every severity to Code Scanning.
+          limit-severities-for-sarif: true
       - if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:

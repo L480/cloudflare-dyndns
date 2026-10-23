@@ -42,6 +42,8 @@ project does not yet follow strict semantic versioning pre-1.0.
   `urllib3`, `msgpack` and `setuptools` were flagged by Trivy and are not
   needed at runtime (the app runs from `/app/.venv`).
 - `certifi` bumped to 2026.10.19 (GHSA-6q48-6c7w-9gw2).
+- `opentelemetry-api` bumped to 1.45.1 (CVE-2026-114603, unbounded
+  tracestate parsing).
 
 ## [1.0.0] - Unreleased
 
