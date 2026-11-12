@@ -63,6 +63,13 @@ LABEL org.opencontainers.image.title="cloudflare-dyndns" \
 # the runtime image drops all of that attack surface instead of chasing it.
 RUN python -m pip uninstall -y pip
 
+# The upstream python image lags Debian security updates (e.g. zlib1g
+# CVE-2026-76844/CVE-2026-85091, apt CVE-2026-109518); pull them in at build time.
+# hadolint ignore=DL3005
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 10001 appuser \
     && useradd --uid 10001 --gid appuser --no-create-home --shell /usr/sbin/nologin appuser
 
