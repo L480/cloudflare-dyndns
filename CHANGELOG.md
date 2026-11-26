@@ -17,6 +17,11 @@ project does not yet follow strict semantic versioning pre-1.0.
   a suffix keep using `ipv6`, so one Update URL updates both `A` records,
   the box's `AAAA`, and the host's `AAAA`. See `docs/api.md`.
 
+### Changed
+
+- Container base image moved to `python:3.15-slim-trixie`; CI now tests
+  Python 3.11 through 3.15.
+
 ### Fixed
 
 - `CFDD_ALLOWED_ZONES` and `CFDD_TRUSTED_PROXIES` crashed on startup with
