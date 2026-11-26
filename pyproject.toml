@@ -14,7 +14,7 @@ classifiers = [
 ]
 dependencies = [
   "cloudflare>=5.10.0,<6",
-  "fastapi>=0.162.6",
+  "fastapi>=0.163.1",
   "uvicorn[standard]>=0.54.0",
   "pydantic>=2.14.3",
   "pydantic-settings>=2.16.3",
